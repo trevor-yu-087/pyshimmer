@@ -19,10 +19,12 @@ from typing import List, Tuple, Union
 
 from pyshimmer.bluetooth.bt_const import *
 from pyshimmer.bluetooth.bt_serial import BluetoothSerial
-from pyshimmer.device import dr2sr, EChannelType, ChannelDataType, sec2ticks, ticks2sec, ExGRegister, \
+from pyshimmer.device import dr2sr, EChannelType, ChannelDataType, ESensorGroup, SensorBitAssignments, sec2ticks, ticks2sec, ExGRegister, \
     get_firmware_type
 from pyshimmer.util import bit_is_set, resp_code_to_bytes
 
+from functools import reduce
+from operator import or_
 
 class DataPacket:
     """Parses data packets received by the Shimmer device
@@ -347,6 +349,18 @@ class StopStreamingCommand(OneShotCommand):
     def __init__(self):
         super().__init__(STOP_STREAMING_COMMAND)
 
+class SetSensorsCommand(OneShotCommand):
+    """Set sensor registers over Bluetooth channel"""
+    def __init__(self, e_sensor_groups: list):
+        super().__init__(SET_SENSORS_COMMAND)
+        self._sensors = e_sensor_groups
+        self._send_cmd_int = reduce(or_, [SensorBitAssignments[s] for s in self._sensors])  # Bitwise or together
+        self._send_cmd = (self._send_cmd_int).to_bytes(3, byteorder='little')
+
+    def send(self, ser: BluetoothSerial) -> None:
+        """Write send command and 3 bytes over bluetooth serial"""
+        ser.write_command(SET_SENSORS_COMMAND, 'BBB', *self._send_cmd)
+
 
 class GetEXGRegsCommand(ResponseCommand):
     """Retrieve the current state of the ExG chip register
@@ -454,6 +468,5 @@ class DummyCommand(OneShotCommand):
     """Dummy command that is only acknowledged by the Shimmer but triggers no response
 
     """
-
     def __init__(self):
         super().__init__(DUMMY_COMMAND)

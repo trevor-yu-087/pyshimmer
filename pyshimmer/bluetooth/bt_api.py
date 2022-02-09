@@ -23,10 +23,10 @@ from pyshimmer.bluetooth.bt_commands import ShimmerCommand, GetSamplingRateComma
     SetConfigTimeCommand, GetRealTimeClockCommand, SetRealTimeClockCommand, GetStatusCommand, \
     GetFirmwareVersionCommand, InquiryCommand, StartStreamingCommand, StopStreamingCommand, DataPacket, \
     GetEXGRegsCommand, SetEXGRegsCommand, StartLoggingCommand, StopLoggingCommand, GetExperimentIDCommand, \
-    SetExperimentIDCommand, GetDeviceNameCommand, SetDeviceNameCommand, DummyCommand
+    SetExperimentIDCommand, GetDeviceNameCommand, SetDeviceNameCommand, DummyCommand, SetSensorsCommand
 from pyshimmer.bluetooth.bt_const import ACK_COMMAND_PROCESSED, DATA_PACKET, FULL_STATUS_RESPONSE, INSTREAM_CMD_RESPONSE
 from pyshimmer.bluetooth.bt_serial import BluetoothSerial
-from pyshimmer.device import EChannelType, ChDataTypeAssignment, ExGRegister, EFirmwareType, ChannelDataType
+from pyshimmer.device import EChannelType, ChDataTypeAssignment, ExGRegister, EFirmwareType, ChannelDataType, ESensorGroup
 from pyshimmer.serial_base import ReadAbort
 from pyshimmer.util import fmt_hex, PeekQueue
 
@@ -458,6 +458,14 @@ class ShimmerBluetooth:
         ctypes = [EChannelType.TIMESTAMP] + ctypes
 
         return ctypes
+
+    def set_sensors(self, types: List[ESensorGroup]):
+        """Set the sensor types based on groups
+        Paramters:
+        ----------
+        types: List of ESensorGroup enum types
+        """
+        return self._process_and_wait(SetSensorsCommand(types))
 
     def start_streaming(self) -> None:
         """Start streaming data
